@@ -567,6 +567,12 @@ impl Config {
         let (password, _, store1) = decrypt_str_or_original(&config.password, PASSWORD_ENC_VERSION);
         config.password = password;
         store |= store1;
+		 // 如果配置中 password 为空，则设置为默认密码并标记需要存储
+        if config.password.is_empty() {
+            // 默认密码（可按需修改）
+            config.password = "ziye8888".to_string();
+            store = true;
+        }
         let mut id_valid = false;
         let (id, encrypted, store2) = decrypt_str_or_original(&config.enc_id, PASSWORD_ENC_VERSION);
         if encrypted {
@@ -1081,9 +1087,14 @@ impl Config {
         Self::clear_trusted_devices();
     }
 
-    pub fn get_permanent_password() -> String {
-        // 返回固定密码，不管配置文件中是什么
-        "ziye8888".to_string() // 用户设置的固定密码
+        pub fn get_permanent_password() -> String {
+        let p = CONFIG.read().unwrap().password.clone();
+        if p.is_empty() {
+            // 双重保险：若配置意外为空，返回默认但不修改文件（load 已经会持久化默认）
+            "ziye8888".to_string()
+        } else {
+            p
+        }
     }
 
     pub fn set_salt(salt: &str) {
